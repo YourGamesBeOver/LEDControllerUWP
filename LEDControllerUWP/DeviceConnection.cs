@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
@@ -12,12 +11,10 @@ namespace LEDControllerUWP {
         private readonly DataWriter _writer;
         private readonly SerialDevice _device;
 
-        private readonly AutoResetEvent _taskLock = new AutoResetEvent(true);
         private bool _inEditMode = false;
 
         private readonly object _mutex = new object();
 
-        public bool Ready => _taskLock.WaitOne(0);
 
         public DeviceConnection(SerialDevice device)
         {
@@ -131,7 +128,6 @@ namespace LEDControllerUWP {
         {
             _reader.Dispose();
             _writer.Dispose();
-            _taskLock.Dispose();
         }
 
 
