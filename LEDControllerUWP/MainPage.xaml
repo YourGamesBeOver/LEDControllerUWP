@@ -20,9 +20,6 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="local:MenuItem">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,0" Padding="0,0,0,0">
-                                <!--<StackPanel.Projection>
-                                    <PlaneProjection GlobalOffsetX="-10"/>
-                                </StackPanel.Projection>-->
                                 <FontIcon Glyph="{x:Bind Glyph}" Margin="0" Style="{ThemeResource FakeSymbolButton}"/>
                                 <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center"/>
                             </StackPanel>

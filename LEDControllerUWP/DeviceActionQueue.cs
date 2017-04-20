@@ -177,11 +177,11 @@ namespace LEDControllerUWP {
                     return _connection.SetImmediateRgb(action.Params.Number, action.Params.Hue, action.Params.Saturation,
                         action.Params.Value);
                 case DeviceActionType.SetTranslation:
-                    break;
+                    return _connection.SetTranslationMode(action.Params.TranslationTableSetting);
                 case DeviceActionType.SetColorMode:
                     break;
                 case DeviceActionType.PowerDown:
-                    break;
+                    return _connection.PowerDown();
                 default:
                     throw new ArgumentOutOfRangeException();
             }

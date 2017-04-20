@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -47,8 +48,6 @@ namespace LEDControllerUWP {
         private void ButtonRest_Click(object sender, RoutedEventArgs e) {
             if (!EventHandlerForDevice.Current.IsDeviceConnected) return;
 
-            //NotifyUser("Sending Reset Signal...", NotifyType.StatusMessage);
-
             _actionQueue.Enqueue(DeviceActionType.Reset, new DeviceActionParams(), false,
                 success => {
                     if (success) {
@@ -63,7 +62,7 @@ namespace LEDControllerUWP {
 
 
         private void SliderBrightnessChanged(object sender, RangeBaseValueChangedEventArgs e) {
-            if (!EventHandlerForDevice.Current.IsDeviceConnected) return;
+            if (!EventHandlerForDevice.Current.IsDeviceConnected || _actionQueue == null) return;
             var value = (byte)SliderBrightness.Value;
 
             //NotifyUser("Setting brightness...", NotifyType.StatusMessage);
@@ -75,6 +74,27 @@ namespace LEDControllerUWP {
                         MainPage.Current.NotifyUser("Failed to set Brightness", NotifyType.ErrorMessage);
                     }
                 }));
+        }
+
+        private void ButtonShutdown_Click(object sender, RoutedEventArgs e)
+        {
+            _actionQueue.Enqueue(DeviceActionType.PowerDown, new DeviceActionParams(), false);
+        }
+
+        private void TranslationButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            if (button == null) return;
+            var value = (TranslationTableSetting)Enum.Parse(typeof(TranslationTableSetting), (string) button.Content);
+            _actionQueue.Enqueue(DeviceActionType.SetTranslation, new DeviceActionParams {TranslationTableSetting = value}, true,
+                success =>
+                {
+                    if (success) {
+                        MainPage.Current.NotifyUser($"Translation set to {value}", NotifyType.StatusMessage);
+                    } else {
+                        MainPage.Current.NotifyUser("Failed to set translation", NotifyType.ErrorMessage);
+                    }
+                });
         }
     }
 }

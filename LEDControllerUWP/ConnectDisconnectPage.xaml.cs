@@ -29,9 +29,6 @@ namespace LEDControllerUWP
         private bool _watchersSuspended;
         private bool _watchersStarted;
 
-        private DeviceConnection _connection;
-        private DeviceActionQueue _actionQueue;
-
         // Has all the devices enumerated by the device watcher?
         private bool _isAllDevicesEnumerated;
 
@@ -402,10 +399,6 @@ namespace LEDControllerUWP
         /// <param name="deviceInformation"></param>
         private void OnDeviceConnected(EventHandlerForDevice sender, DeviceInformation deviceInformation)
         {
-            _actionQueue?.Dispose();
-            _connection?.Dispose();
-            _connection = new DeviceConnection(sender.Device);
-            _actionQueue = new DeviceActionQueue(_connection);
 
             // Find and select our connected device
             if (_isAllDevicesEnumerated)
@@ -436,8 +429,6 @@ namespace LEDControllerUWP
         /// <param name="deviceInformation"></param>
         private async void OnDeviceClosing(EventHandlerForDevice sender, DeviceInformation deviceInformation)
         {
-            _actionQueue?.Dispose();
-            _connection?.Dispose();
             await MainPage.Current.Dispatcher.RunAsync(
                 CoreDispatcherPriority.Normal,
                 () =>

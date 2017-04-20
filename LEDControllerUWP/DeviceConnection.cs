@@ -26,6 +26,11 @@ namespace LEDControllerUWP {
             _device.Handshake = SerialHandshake.None;
             _reader = new DataReader(device.InputStream);
             _writer = new DataWriter(device.OutputStream);
+            Debug.WriteLine($"_reader.UncomsumedBufferLength = {_reader.UnconsumedBufferLength}");
+            while (_reader.UnconsumedBufferLength > 0)
+            {
+                _reader.ReadByte();
+            }
         }
 
         private bool EnterEditMode()
@@ -69,16 +74,16 @@ namespace LEDControllerUWP {
         public bool SetBrightness(byte newBrightness)
         {
             lock(_mutex) {
-                //Debug.WriteLine($"Setting brightness to {newBrightness}");
+                Debug.WriteLine($"Setting brightness to {newBrightness}");
                 if (!EnterEditMode()) return false;
-                //Debug.WriteLine("Sending B and brightness");
-                _writer.WriteByte((byte) 'B');
+                Debug.WriteLine("Sending B and brightness");
+                _writer.WriteByte((byte)'B');
                 _writer.WriteByte(newBrightness);
                 _writer.StoreAsync().AsTask().Wait();
-                //Debug.WriteLine("Reading response");
+                Debug.WriteLine("Reading response");
                 _reader.LoadAsync(1).AsTask().Wait();
                 var val = _reader.ReadByte();
-                //Debug.WriteLine($"SetBrightness Response: {val}");
+                Debug.WriteLine($"SetBrightness Response: {val}");
                 ExitEditMode();
                 return val == Ack;
             }
@@ -114,11 +119,35 @@ namespace LEDControllerUWP {
         {
             lock (_mutex)
             {
-                if (!EnterEditMode()) return false;
                 _device.IsDataTerminalReadyEnabled = false;
                 Task.Delay(500).Wait();
                 _device.IsDataTerminalReadyEnabled = true;
                 Task.Delay(2000).Wait();
+                _inEditMode = false;
+                return true;
+            }
+        }
+
+        public bool SetTranslationMode(TranslationTableSetting mode)
+        {
+            lock (_mutex) {
+                if (!EnterEditMode()) return false;
+                _writer.WriteByte((byte)'T');
+                _writer.WriteByte((byte)mode);
+                _writer.StoreAsync().AsTask().Wait();
+                _reader.LoadAsync(1).AsTask().Wait();
+                var val = _reader.ReadByte();
+                ExitEditMode();
+                return val == Ack;
+            }
+        }
+        public bool PowerDown()
+        {
+            lock (_mutex)
+            {
+                if (!EnterEditMode()) return false;
+                _writer.WriteByte((byte) 'P');
+                _writer.StoreAsync().AsTask().Wait();
                 _inEditMode = false;
                 return true;
             }
@@ -132,5 +161,7 @@ namespace LEDControllerUWP {
 
 
         private const byte Ack = 0x06;
+
+
     }
 }
