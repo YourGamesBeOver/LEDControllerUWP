@@ -27,22 +27,18 @@ namespace LEDControllerUWP
 
         private static readonly Type[] MenuTypes = {typeof(ConnectDisconnectPage), typeof(ControlPage)};
 
+        private readonly MenuItem[] MenuItems =
+        {
+            new MenuItem {Name = "Device Selection", Glyph = '\uE950', Page = typeof(ConnectDisconnectPage)},
+            new MenuItem {Name = "General Controls", Glyph = '\uE713', Page = typeof(ControlPage)},
+            new MenuItem {Name = "LEDs", Glyph = '\uE781', Page = null}
+        };
+
+
         public MainPage()
         {
             InitializeComponent();
             Current = this;
-
-        }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-
-            if (Window.Current.Bounds.Width < 640) {
-                MenuList.SelectedIndex = -1;
-            } else {
-                MenuList.SelectedIndex = 0;
-            }
         }
 
         #region Notification System
@@ -92,14 +88,17 @@ namespace LEDControllerUWP
         private void MenuList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var menu = sender as ListBox;
-            if (menu == null) return;
-            if (menu.SelectedIndex >= 0 && menu.SelectedIndex < MenuTypes.Length)
-            {
-                ContentFrame.Navigate(MenuTypes[menu.SelectedIndex]);
-            }
+            var item = menu?.SelectedItem as MenuItem;
+            if (item?.Page == null) return;
+            ContentFrame.Navigate(item.Page);
             if (Window.Current.Bounds.Width < 640) {
                 Splitter.IsPaneOpen = false;
             }
+        }
+
+        private void MenuButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            Splitter.IsPaneOpen = !Splitter.IsPaneOpen;
         }
     }
 

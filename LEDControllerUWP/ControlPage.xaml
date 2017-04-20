@@ -18,6 +18,9 @@
             </StackPanel>
             <ScrollViewer Grid.Row="1" VerticalScrollMode="Auto" VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="ActionList" Orientation="Vertical" Margin="10,10,10,0">
+                    <Border x:Name="DisabledReason"  BorderBrush="Red" BorderThickness="0" Background="Red" Visibility="Collapsed">
+                        <TextBlock x:Name="DisabledReasonText" Text="No Device is connected."/>
+                    </Border>
                     <Button x:Name="ButtonReset" Content="Reset Arduino" Margin="0,10,0,0" Click="ButtonRest_Click"/>
                     <Slider x:Name="SliderBrightness" Minimum="0" Maximum="255" Header="Brightness" SnapsTo="StepValues" StepFrequency="1" Value="255" Margin="0,10,0,0" ValueChanged="SliderBrightnessChanged"/>
                     <!--more controls here-->

@@ -15,11 +15,26 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:LEDControllerUWP">
 
+    <Style TargetType="ListBoxItem">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    
     <Style x:Key="HeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource TitleTextBlockStyle}">
         <Setter Property="FontSize" Value="28"/>
     </Style>
 
-    <Style x:Key="SymbolButton" TargetType="ToggleButton">
+    <Style x:Key="FakeSymbolButton" TargetType="FontIcon">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontFamily" Value="{StaticResource SymbolThemeFontFamily}" />
+        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="MinWidth" Value="48" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseHighBrush}" />
+    </Style>
+
+        <Style x:Key="SymbolButton" TargetType="ToggleButton">
         <Setter Property="FontSize" Value="16" />
         <Setter Property="FontFamily" Value="{StaticResource SymbolThemeFontFamily}" />
         <Setter Property="MinHeight" Value="48" />

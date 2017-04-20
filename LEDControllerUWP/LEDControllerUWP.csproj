@@ -101,6 +101,7 @@
     <Compile Include="ControlPage.xaml.cs">
       <DependentUpon>ControlPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MenuItem.cs" />
     <Compile Include="TranslationTableSetting.cs" />
     <Compile Include="ColorMode.cs" />
     <Compile Include="DeviceActionQueue.cs" />

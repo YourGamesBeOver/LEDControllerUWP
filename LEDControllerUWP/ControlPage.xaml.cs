@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+﻿using System.Threading.Tasks;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
@@ -20,9 +10,38 @@ namespace LEDControllerUWP {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class ControlPage : Page {
+    public sealed partial class ControlPage : Page
+    {
+
+        private DeviceActionQueue _actionQueue;
+
         public ControlPage() {
             this.InitializeComponent();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            if (EventHandlerForDevice.Current.IsDeviceConnected) {
+                SetAllControlsActive(true);
+                _actionQueue = EventHandlerForDevice.Current.ActionQueue;
+                DisabledReason.Visibility = Visibility.Collapsed;
+            } else {
+                SetAllControlsActive(false);
+                DisabledReason.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void SetAllControlsActive(bool active)
+        {
+            foreach (var child in ActionList.Children)
+            {
+                var button = child as Control;
+                if (button != null)
+                {
+                    button.IsEnabled = active;
+                }
+            }
         }
 
         private void ButtonRest_Click(object sender, RoutedEventArgs e) {
@@ -35,7 +54,7 @@ namespace LEDControllerUWP {
                     if (success) {
                         MainPage.Current.NotifyUser("Device Reset!", NotifyType.StatusMessage);
                     } else {
-                        NotifyUser("Failed to reset device!", NotifyType.ErrorMessage);
+                        MainPage.Current.NotifyUser("Failed to reset device!", NotifyType.ErrorMessage);
                     }
 
                 });

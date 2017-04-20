@@ -479,11 +479,6 @@ namespace LEDControllerUWP
             ButtonDisconnect.IsEnabled = !enableConnectButton;
 
             ConnectDevices.IsEnabled = enableConnectButton;
-            //foreach (var child in ActionList.Children) {
-            //    var button = child as Control;
-            //    if (button != null) {
-            //        button.IsEnabled = !enableConnectButton;
-            //    }
         }
     }
 }

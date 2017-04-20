@@ -52,6 +52,8 @@ namespace LEDControllerUWP {
         private bool _watcherSuspended;
         private bool _watcherStarted;
 
+
+
         /// <summary>
         /// Enforces the singleton pattern so that there is only one object handling app events
         /// as it relates to the SerialDevice because this sample app only supports communicating with one device at a time. 
@@ -89,6 +91,9 @@ namespace LEDControllerUWP {
         public bool IsDeviceConnected => (Device != null);
 
         public SerialDevice Device { get; private set; }
+
+        public DeviceConnection Connection { get; private set; }
+        public DeviceActionQueue ActionQueue { get; private set; }
 
         /// <summary>
         /// This DeviceInformation represents which device is connected or which device will be reconnected when
@@ -134,6 +139,9 @@ namespace LEDControllerUWP {
 
                 DeviceInformation = deviceInfo;
                 DeviceSelector = deviceSelector;
+
+                Connection = new DeviceConnection(Device);
+                ActionQueue = new DeviceActionQueue(Connection);
 
                 notificationStatus = NotifyType.StatusMessage;
                 notificationMessage = "Device " + DeviceInformation.Properties["System.ItemNameDisplay"] + " opened";
@@ -249,9 +257,14 @@ namespace LEDControllerUWP {
                 // Notify callback that we're about to close the device
                 OnDeviceClose?.Invoke(this, DeviceInformation);
 
+                ActionQueue.Dispose();
+                Connection.Dispose();
+
                 // This closes the handle to the device
                 Device.Dispose();
 
+                ActionQueue = null;
+                Connection = null;
                 Device = null;
 
                 // Save the deviceInformation.Id in case deviceInformation is set to null when closing the
