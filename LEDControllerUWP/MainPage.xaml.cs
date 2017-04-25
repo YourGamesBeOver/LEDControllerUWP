@@ -15,7 +15,7 @@ namespace LEDControllerUWP
 
         public static MainPage Current;
 
-        private readonly MenuItem[] MenuItems =
+        private readonly MenuItem[] _menuItems =
         {
             new MenuItem {Name = "Device Selection", Glyph = '\uE950', Page = typeof(ConnectDisconnectPage)},
             new MenuItem {Name = "General Controls", Glyph = '\uE713', Page = typeof(ControlPage)},
@@ -79,9 +79,8 @@ namespace LEDControllerUWP
             var item = menu?.SelectedItem as MenuItem;
             if (item?.Page == null) return;
             ContentFrame.Navigate(item.Page);
-            if (Window.Current.Bounds.Width < 640) {
-                Splitter.IsPaneOpen = false;
-            }
+            Splitter.IsPaneOpen = false;
+            
         }
 
         private void MenuButton_OnClick(object sender, RoutedEventArgs e)

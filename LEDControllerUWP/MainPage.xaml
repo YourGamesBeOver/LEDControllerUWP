@@ -16,7 +16,7 @@
             <SplitView.Pane>
                 <ListBox x:Name="MenuList" SelectionMode="Single" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" 
                          VerticalAlignment="Top" RelativePanel.Below="MenuTitle" Margin="0" 
-                         SelectionChanged="MenuList_OnSelectionChanged" ItemsSource="{x:Bind MenuItems}" Padding="0,0,0,0" HorizontalContentAlignment="Left">
+                         SelectionChanged="MenuList_OnSelectionChanged" ItemsSource="{x:Bind _menuItems}" Padding="0,0,0,0" HorizontalContentAlignment="Left">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="local:MenuItem">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,0" Padding="0,0,0,0">
@@ -47,7 +47,7 @@
                     </ToggleButton.Content>
                 </ToggleButton>
             </Border>
-            <TextBlock Text ="Arduino Reset" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+            <TextBlock Text ="LED Controller" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" Margin="10,0,0,0"/>
         </StackPanel>
     </Grid>
 </Page>
