@@ -101,11 +101,15 @@ namespace LEDControllerUWP
 
             // It is important that the FromIdAsync call is made on the UI thread because the consent prompt, when present,
             // can only be displayed on the UI thread. Since this method is invoked by the UI, we are already in the UI thread.
-            bool openSuccess =
+            var openSuccess =
                 await EventHandlerForDevice.Current.OpenDeviceAsync(entry.DeviceInformation, entry.DeviceSelector);
 
             // Disable connect button if we connected to the device
             UpdateConnectDisconnectButtonsAndList(!openSuccess);
+            await MainPage.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                MainPage.Current.GoToPage(1);
+            });
         }
 
         private void ButtonDisconnect_Click(object sender, RoutedEventArgs e)
@@ -385,8 +389,16 @@ namespace LEDControllerUWP
                     }
                     else
                     {
-                        ButtonDisconnect.IsEnabled = false;
-                        MainPage.Current.NotifyUser("No device is currently connected", NotifyType.StatusMessage);
+                        if (ConnectDevices.Items != null && ConnectDevices.Items.Count == 1)
+                        {
+                            ConnectDevices.SelectedIndex = 0;
+                            ButtonConnect_Click(null, null);
+                        }
+                        else
+                        {
+                            ButtonDisconnect.IsEnabled = false;
+                            MainPage.Current.NotifyUser("No device is currently connected", NotifyType.StatusMessage);
+                        }
                     }
                 });
         }
@@ -420,6 +432,8 @@ namespace LEDControllerUWP
                 MainPage.Current.NotifyUser("Connected to - " +
                                             EventHandlerForDevice.Current.DeviceInformation.Id, NotifyType.StatusMessage);
             }
+            // ReSharper disable once UnusedVariable
+            var asyncAction = MainPage.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => MainPage.Current.GoToPage(1));
         }
 
         /// <summary>

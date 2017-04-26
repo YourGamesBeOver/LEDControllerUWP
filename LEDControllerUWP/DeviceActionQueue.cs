@@ -18,13 +18,19 @@ namespace LEDControllerUWP {
 
         private readonly DeviceConnection _connection;
 
+        public int Count {get; private set;}
+
         public DeviceActionQueue(DeviceConnection connection)
         {
-            _connection = connection;
-            _tokenSource = new CancellationTokenSource();
-            _token = _tokenSource.Token;
-            var worker = new Task(WorkerThreadAction, _token, TaskCreationOptions.LongRunning);
-            worker.Start();
+            lock (_lock)
+            {
+                _connection = connection;
+                _tokenSource = new CancellationTokenSource();
+                _token = _tokenSource.Token;
+                var worker = new Task(WorkerThreadAction, _token, TaskCreationOptions.LongRunning);
+                worker.Start();
+                Count = 0;
+            }
         }
 
 
@@ -44,17 +50,19 @@ namespace LEDControllerUWP {
         {
             lock (_lock)
             {
+                Count++;
                 if (_root == null)
                 {
-                    _itemsInQueueEvent.Set();
                     _root = node;
-                    return;
+                    _itemsInQueueEvent.Set();
                 }
-
-                var cur = _root;
-                while (cur.Next != null) cur = cur.Next;
-                cur.Next = node;
-                _itemsInQueueEvent.Set();
+                else
+                {
+                    var cur = _root;
+                    while (cur.Next != null) cur = cur.Next;
+                    cur.Next = node;
+                    _itemsInQueueEvent.Set();
+                }
             }
         }
 
@@ -68,6 +76,7 @@ namespace LEDControllerUWP {
                 {
                     if (cur.Action.ActionType == type)
                     {
+                        Count--;
                         if (prev != null)
                         {
                             prev.Next = cur.Next;
@@ -102,6 +111,7 @@ namespace LEDControllerUWP {
                 var retVal = Peek();
                 _root = _root?.Next;
                 if (_root == null) _itemsInQueueEvent.Reset();
+                Count--;
                 return retVal;
             }
         }
@@ -150,11 +160,19 @@ namespace LEDControllerUWP {
             {
                 _itemsInQueueEvent.WaitOne();
                 if (_token.IsCancellationRequested) return;
-                var nextAction = Dequeue();
-                Debug.Assert(nextAction != null, "nextAction is null!");
-                var success = ExecuteAction(nextAction.Value);
-                nextAction.Value.CompletionCallback?.Invoke(success);
-                if (HasNext()) _itemsInQueueEvent.Set();
+                using (var session = _connection.BeginSession())
+                {
+                    Debug.Assert(session != null, "session is null");
+                    while (HasNext())
+                    {
+                        if (_token.IsCancellationRequested) return;
+                        var nextAction = Dequeue();
+                        Debug.Assert(nextAction != null, "nextAction is null!");
+                        
+                        var success = ExecuteAction(nextAction.Value);
+                        nextAction.Value.CompletionCallback?.Invoke(success);
+                    }
+                }
             }
         }
 
@@ -210,7 +228,6 @@ namespace LEDControllerUWP {
 
         [FieldOffset(1)] public int RGB;
         [FieldOffset(1)] public int HSV;
-
     }
 
     public enum DeviceActionType

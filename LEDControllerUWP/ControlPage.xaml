@@ -7,7 +7,7 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid Margin="12,20,12,12">
+        <Grid Margin="12,20,0,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -16,7 +16,7 @@
                 <TextBlock Text="Device Actions" Style="{StaticResource SubtitleTextBlockStyle}" />
             </StackPanel>
             <ScrollViewer Grid.Row="1" VerticalScrollMode="Auto" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="ActionList" Orientation="Vertical" Margin="10,10,10,0">
+                <StackPanel x:Name="ActionList" Orientation="Vertical" Margin="10,10,20,0">
                     <Border x:Name="DisabledReason"  BorderBrush="Red" BorderThickness="0" Background="Red" Visibility="Collapsed">
                         <TextBlock Text="No Device is connected."/>
                     </Border>

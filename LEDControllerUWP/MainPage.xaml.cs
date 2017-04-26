@@ -1,7 +1,9 @@
-﻿using Windows.UI.Core;
+﻿using System;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -27,6 +29,17 @@ namespace LEDControllerUWP
         {
             InitializeComponent();
             Current = this;
+            MenuList.Loaded += MenuList_Loaded;
+        }
+
+        private void MenuList_Loaded(object sender, RoutedEventArgs e)
+        {
+            MenuList.SelectedIndex = 0;
+        }
+
+        public void GoToPage(int index)
+        {
+            MenuList.SelectedIndex = index;
         }
 
         #region Notification System
@@ -79,8 +92,7 @@ namespace LEDControllerUWP
             var item = menu?.SelectedItem as MenuItem;
             if (item?.Page == null) return;
             ContentFrame.Navigate(item.Page);
-            Splitter.IsPaneOpen = false;
-            
+            Splitter.IsPaneOpen = false;           
         }
 
         private void MenuButton_OnClick(object sender, RoutedEventArgs e)

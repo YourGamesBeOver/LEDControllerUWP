@@ -35,12 +35,25 @@ namespace LEDControllerUWP {
 
         private void SetAllControlsActive(bool active)
         {
-            foreach (var child in ActionList.Children)
+            SetAllChildControlsActive(ActionList, active);
+        }
+
+        private void SetAllChildControlsActive(Panel panel, bool active)
+        {
+            foreach (var child in panel.Children)
             {
                 var button = child as Control;
                 if (button != null)
                 {
                     button.IsEnabled = active;
+                }
+                else
+                {
+                    var childpanel = child as Panel;
+                    if (childpanel != null)
+                    {
+                        SetAllChildControlsActive(childpanel, active);
+                    }
                 }
             }
         }
