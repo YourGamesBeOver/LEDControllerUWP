@@ -168,9 +168,15 @@ namespace LEDControllerUWP {
                         if (_token.IsCancellationRequested) return;
                         var nextAction = Dequeue();
                         Debug.Assert(nextAction != null, "nextAction is null!");
-                        
-                        var success = ExecuteAction(nextAction.Value);
-                        nextAction.Value.CompletionCallback?.Invoke(success);
+                        var success = false;
+                        try
+                        {
+                            success = ExecuteAction(nextAction.Value, session);
+                        }
+                        finally
+                        {
+                            nextAction.Value.CompletionCallback?.Invoke(success);
+                        }
                     }
                 }
             }
@@ -180,22 +186,23 @@ namespace LEDControllerUWP {
         /// Executes the action, called from the worker thread
         /// </summary>
         /// <param name="action"></param>
-        private bool ExecuteAction(DeviceAction action)
+        /// <param name="session"></param>
+        private bool ExecuteAction(DeviceAction action, DeviceConnection.DeviceConnectionSession session)
         {
             switch (action.ActionType)
             {
                 case DeviceActionType.SetBrightness:
-                    return _connection.SetBrightness(action.Params.Brightness);
+                    return session.SetBrightness(action.Params.Brightness);
                 case DeviceActionType.Reset:
                     return _connection.ResetDevice();
                 case DeviceActionType.SetRgb:
-                    return _connection.SetImmediateRgb(action.Params.Number, action.Params.Red, action.Params.Green,
+                    return session.SetImmediateRgb(action.Params.Number, action.Params.Red, action.Params.Green,
                         action.Params.Blue);
                 case DeviceActionType.SetHsv:
-                    return _connection.SetImmediateRgb(action.Params.Number, action.Params.Hue, action.Params.Saturation,
+                    return session.SetImmediateRgb(action.Params.Number, action.Params.Hue, action.Params.Saturation,
                         action.Params.Value);
                 case DeviceActionType.SetTranslation:
-                    return _connection.SetTranslationMode(action.Params.TranslationTableSetting);
+                    return session.SetTranslationMode(action.Params.TranslationTableSetting);
                 case DeviceActionType.SetColorMode:
                     break;
                 case DeviceActionType.PowerDown:
@@ -210,7 +217,6 @@ namespace LEDControllerUWP {
     [StructLayout(LayoutKind.Explicit)]
     public struct DeviceActionParams
     {
-        [FieldOffset(0)] public byte Mode;
         [FieldOffset(0)] public byte Brightness;
         [FieldOffset(0)] public byte Number;
         [FieldOffset(0)] public ColorMode ColorMode;

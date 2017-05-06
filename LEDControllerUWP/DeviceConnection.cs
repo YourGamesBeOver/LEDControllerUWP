@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
-using Windows.UI.Composition.Interactions;
 
 namespace LEDControllerUWP {
     public class DeviceConnection : IDisposable
@@ -13,9 +12,9 @@ namespace LEDControllerUWP {
         private readonly DataWriter _writer;
         private readonly SerialDevice _device;
 
-        private bool _inEditMode = false;
+        private readonly object _mutex = new object();
 
-        private object _mutex = new object();
+        private const int Timeout = 1000;
 
 
         public DeviceConnection(SerialDevice device)
@@ -51,35 +50,11 @@ namespace LEDControllerUWP {
 
         private bool EnterEditModeInternal()
         {
-            if (_inEditMode) return true;
-            Debug.WriteLine("Entering edit mode");
             _writer.WriteByte((byte)'E');
-            _writer.StoreAsync().AsTask().Wait();
-            _reader.LoadAsync(1).AsTask().Wait();
+            if (!_writer.StoreAsync().AsTask().Wait(Timeout)) return false;
+            if (!_reader.LoadAsync(1).AsTask().Wait(Timeout)) return false;
             var val = _reader.ReadByte();
-            Debug.WriteLine($"EnterEditMode Response: {val}");
-            if (val == Ack) {
-                _inEditMode = true;
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        private void ExitEditMode()
-        {
-            lock (_mutex)
-            {
-                ExitEditModeInternal();
-            }
-        }
-
-        private void ExitEditModeInternal()
-        {
-            if (!_inEditMode) return;
-            _writer.WriteByte((byte)'E');
-            _writer.StoreAsync().AsTask().Wait();
-            _inEditMode = false;
+            return val == Ack;
         }
 
 
@@ -89,22 +64,6 @@ namespace LEDControllerUWP {
             {
                 return session != null && session.SetBrightness(newBrightness);
             }
-            //lock(_mutex) {
-            //    if (!EnterEditMode()) return false;
-            //    var val = SetBrightnessInternal(newBrightness);
-            //    ExitEditMode();
-            //    return val;
-            //}
-        }
-
-        private bool SetBrightnessInternal(byte newBrightness)
-        {
-            _writer.WriteByte((byte)'B');
-            _writer.WriteByte(newBrightness);
-            _writer.StoreAsync().AsTask().Wait();
-            _reader.LoadAsync(1).AsTask().Wait();
-            var val = _reader.ReadByte();
-            return val == Ack;
         }
 
         public bool SetImmediateRgb(byte number, byte red, byte green, byte blue)
@@ -113,7 +72,6 @@ namespace LEDControllerUWP {
             {
                 return session != null && session.SetImmediateRgb(number, red, green, blue);
             }
-            //return SetImmediate(number, red, green, blue, 'I');
         }
 
         public bool SetImmediateHsv(byte number, byte hue, byte saturation, byte value) {
@@ -121,30 +79,6 @@ namespace LEDControllerUWP {
             {
                 return session != null && session.SetImmediateHsv(number, hue, saturation, value);
             }
-            //return SetImmediate(number, hue, saturation, value, 'i');
-        }
-
-        private bool SetImmediate(byte number, byte r, byte g, byte b, char command)
-        {
-            lock (_mutex) {
-                if (!EnterEditMode()) return false;
-                var val = SetImmediateInternal(number, r, g, b, command);
-                ExitEditMode();
-                return val;
-            }
-        }
-
-        private bool SetImmediateInternal(byte number, byte r, byte g, byte b, char command)
-        {
-            _writer.WriteByte((byte)command);
-            _writer.WriteByte(number);
-            _writer.WriteByte(r);
-            _writer.WriteByte(g);
-            _writer.WriteByte(b);
-            _writer.StoreAsync().AsTask().Wait();
-            _reader.LoadAsync(1).AsTask().Wait();
-            var val = _reader.ReadByte();
-            return val == Ack;
         }
 
         public bool ResetDevice()
@@ -155,7 +89,6 @@ namespace LEDControllerUWP {
                 Task.Delay(500).Wait();
                 _device.IsDataTerminalReadyEnabled = true;
                 Task.Delay(2000).Wait();
-                _inEditMode = false;
                 return true;
             }
         }
@@ -166,30 +99,13 @@ namespace LEDControllerUWP {
             {
                 return session != null && session.SetTranslationMode(mode);
             }
-            //lock (_mutex) {
-            //    if (!EnterEditMode()) return false;
-            //    var response = SetTranslationModeInternal(mode);
-            //    ExitEditMode();
-            //    return response;
-            //}
-        }
-
-        private bool SetTranslationModeInternal(TranslationTableSetting mode)
-        {
-            _writer.WriteByte((byte)'T');
-            _writer.WriteByte((byte)mode);
-            _writer.StoreAsync().AsTask().Wait();
-            _reader.LoadAsync(1).AsTask().Wait();
-            var val = _reader.ReadByte();
-            return val == Ack;
         }
 
         public bool PowerDown()
         {
             lock (_mutex)
             {
-                if (!EnterEditMode()) return false;
-                return PowerDownInternal();
+                return EnterEditMode() && PowerDownInternal();
             }
         }
 
@@ -197,7 +113,6 @@ namespace LEDControllerUWP {
         {
             _writer.WriteByte((byte)'P');
             _writer.StoreAsync().AsTask().Wait();
-            _inEditMode = false;
             return true;
         }
 
@@ -207,11 +122,31 @@ namespace LEDControllerUWP {
             _writer.Dispose();
         }
 
+        public bool VerifyDevice()
+        {
+            lock (_mutex)
+            {
+                _writer.WriteByte((byte) 'e');
+                _writer.StoreAsync().AsTask().Wait();
+                _reader.LoadAsync(1).AsTask().Wait();
+                var val = _reader.ReadByte();
+                return val == Ack;
+            }
+        }
+
 
         private const byte Ack = 0x06;
 
 
-        public class DeviceConnectionSession : IDisposable
+        /// <summary>
+        /// This class represents an edit mode session on the device. 
+        /// To open a new session, call DeviceConnection.BeginSession()
+        /// Only one DeviceConnectionSession can be open at a time.
+        /// Using a DeviceConnectionSession allows for multiple actions to be performed
+        /// during the same edit mode session.  
+        /// 
+        /// </summary>
+        public sealed class DeviceConnectionSession : IDisposable
         {
             private readonly DeviceConnection _connection;
 
@@ -222,26 +157,62 @@ namespace LEDControllerUWP {
 
             public void Dispose()
             {
-                _connection.ExitEditModeInternal();
+                ExitEditMode();
                 Monitor.Exit(_connection._mutex);
+            }
+
+            private bool ExitEditMode()
+            {
+                _connection._writer.WriteByte((byte)'e');
+                return PushAndWaitForAck();
             }
 
             public bool SetTranslationMode(TranslationTableSetting mode)
             {
-                return _connection.SetTranslationModeInternal(mode);
+                _connection._writer.WriteByte((byte)'T');
+                _connection._writer.WriteByte((byte)mode);
+                return PushAndWaitForAck();
             }
 
             public bool SetImmediateRgb(byte number, byte red, byte green, byte blue) {
-                return _connection.SetImmediateInternal(number, red, green, blue, 'I');
+                _connection._writer.WriteByte((byte)'I');
+                _connection._writer.WriteByte(number);
+                _connection._writer.WriteByte(red);
+                _connection._writer.WriteByte(green);
+                _connection._writer.WriteByte(blue);
+                return PushAndWaitForAck();
             }
 
             public bool SetImmediateHsv(byte number, byte hue, byte saturation, byte value) {
-                return _connection.SetImmediateInternal(number, hue, saturation, value, 'i');
+                _connection._writer.WriteByte((byte)'i');
+                _connection._writer.WriteByte(number);
+                _connection._writer.WriteByte(hue);
+                _connection._writer.WriteByte(saturation);
+                _connection._writer.WriteByte(value);
+                return PushAndWaitForAck();
             }
 
             public bool SetBrightness(byte newBrightness)
             {
-                return _connection.SetBrightnessInternal(newBrightness);
+                _connection._writer.WriteByte((byte)'B');
+                _connection._writer.WriteByte(newBrightness);
+                return PushAndWaitForAck();
+            }
+
+            /// <summary>
+            /// Writes any data pending in _connection._writer, with a timeout, and then waits for ACK
+            /// </summary>
+            /// <returns>True if both actions succeded, false otherwise</returns>
+            private bool PushAndWaitForAck()
+            {
+                return _connection._writer.StoreAsync().AsTask().Wait(Timeout) && WaitForAck();
+            }
+
+            private bool WaitForAck()
+            {
+                _connection._reader.LoadAsync(1).AsTask().Wait();
+                var val = _connection._reader.ReadByte();
+                return val == Ack;
             }
         }
     }
